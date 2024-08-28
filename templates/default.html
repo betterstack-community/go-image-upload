@@ -1,0 +1,43 @@
+{{ define "default" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="shortcut icon" href="data:image/x-icon;" type="image/x-icon">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Image Upload Demo</title>
+</head>
+
+<body>
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="/">  
+        Image Upload
+      </a>
+    </div>
+
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <div class="buttons">
+          {{ if . }}
+          <a class="button is-danger" href="/auth/logout">
+            <strong>Logout</strong>
+          </a>
+          {{ else }}
+          <a class="button is-link" href="/auth/github">
+            <strong>Login with GitHub</strong>
+          </a>
+          {{ end}}
+        </div>
+      </div>
+    </div>
+  </nav>
+  {{ template "content" . }}
+</body>
+
+</html>
+{{ end }}

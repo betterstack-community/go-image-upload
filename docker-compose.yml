@@ -1,0 +1,89 @@
+services:
+  app:
+    build:
+      context: .
+      target: ${GO_ENV}
+    container_name: go-image-upload-app
+    environment:
+      PORT: ${PORT}
+      LOG_LEVEL: ${LOG_LEVEL}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+    env_file:
+      - ./.env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - 8000:8000
+    networks:
+      - go-image-upload-network
+    volumes:
+      - .:/app
+
+  migrate:
+    image: migrate/migrate
+    container_name: go-image-upload-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - go-image-upload-network
+    volumes:
+      - ./db/migrations/:/migrations
+    command: [-path, /migrations/, -database, "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@go-image-upload-db/${POSTGRES_DB}?sslmode=disable", up]
+
+  postgres:
+    image: postgres:alpine
+    restart: always
+    container_name: go-image-upload-db
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [CMD-SHELL, "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5432:5432
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks:
+      - go-image-upload-network
+
+  redis:
+    image: redis:alpine
+    container_name: go-image-upload-redis
+    restart: always
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_DATABASE=0
+    volumes:
+      - redis:/var/lib/redis
+      - redis-config:/usr/local/etc/redis/redis.conf
+    networks:
+      - go-image-upload-network
+
+volumes:
+  pg-data:
+  redis:
+  redis-config:
+
+networks:
+  go-image-upload-network:

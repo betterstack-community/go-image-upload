@@ -1,25 +1,11 @@
-# Title of the project
+# Image Upload Demo
 
-Description of the project.
+Learn how to instrument a Go application to emit traces using OpenTelemetry.
 
-**Tutorial**: [Link to corresponding BetterStack tutorial]()
+**Tutorial**:
+[Instrumenting Go Applications with OpenTelemetry (Beginner's Guide)](https://betterstack.com/community/guides/scaling-go/opentelemetry-go)
 
-![Screenshot or GIF of the application in action](screenshot.png)
-
-## 🟢 Prerequisites
-
-A list of requirements and package versions that the reader needs to build and
-run the project.
-
-- The first thing.
-- The second thing.
-
-## 📦 Getting started
-
-A brief guide to setting up the project.
-
-- Do the first thing.
-- Do the next thing.
+![Image Upload Application](screenshot.png)
 
 ## ⚖ License
 
