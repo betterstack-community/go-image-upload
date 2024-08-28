@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	redis "github.com/redis/go-redis/v9"
 )
 
@@ -29,6 +30,10 @@ func NewRedisConn(ctx context.Context, addr string) (*RedisConn, error) {
 	}
 
 	slog.DebugContext(ctx, "redis connection is successful")
+
+	if err := redisotel.InstrumentTracing(r); err != nil {
+		return nil, err
+	}
 
 	return &RedisConn{
 		client: r,

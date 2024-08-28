@@ -9,6 +9,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
+	"github.com/uptrace/bun/extra/bunotel"
 )
 
 type DBConn struct {
@@ -19,6 +20,9 @@ func NewDBConn(ctx context.Context, name, url string) (*DBConn, error) {
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(url)))
 
 	db := bun.NewDB(sqldb, pgdialect.New())
+	db.AddQueryHook(
+		bunotel.NewQueryHook(bunotel.WithDBName(name)),
+	)
 	return &DBConn{db}, nil
 }
 

@@ -14,6 +14,10 @@ import (
 
 	"github.com/Kagami/go-avif"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/betterstack-community/go-image-upload/models"
 )
 
@@ -129,23 +133,48 @@ func logout(w http.ResponseWriter, r *http.Request) {
 
 func requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx, span := tracer.Start(
+			r.Context(),
+			"requireAuth",
+			trace.WithSpanKind(trace.SpanKindServer),
+		)
 
 		cookie, err := r.Cookie(sessionCookieKey)
 		if err != nil {
 			http.Redirect(w, r, "/auth", http.StatusSeeOther)
+			span.AddEvent(
+				"redirecting to /auth",
+				trace.WithAttributes(
+					attribute.String("reason", "missing session cookie"),
+				),
+			)
+			span.End()
 			return
 		}
+
+		span.SetAttributes(
+			attribute.String("app.cookie.value", cookie.Value),
+		)
 
 		email, err := redisConn.GetSessionToken(ctx, cookie.Value)
 		if err != nil {
 			http.Redirect(w, r, "/auth", http.StatusSeeOther)
+			span.AddEvent(
+				"redirecting to /auth",
+				trace.WithAttributes(
+					attribute.String("reason", err.Error()),
+				))
+			span.End()
 			return
 		}
 
 		ctx = context.WithValue(r.Context(), "email", email)
 
 		req := r.WithContext(ctx)
+
+		span.SetStatus(codes.Ok, "authenticated successfully")
+
+		span.End()
 
 		next.ServeHTTP(w, req)
 	})

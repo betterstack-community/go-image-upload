@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,11 +12,16 @@ import (
 	"github.com/betterstack-community/go-image-upload/db"
 	"github.com/betterstack-community/go-image-upload/redisconn"
 	"github.com/joho/godotenv"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var redisConn *redisconn.RedisConn
 
 var dbConn *db.DBConn
+
+var tracer trace.Tracer
 
 //go:embed templates/*
 var templates embed.FS
@@ -58,12 +64,22 @@ func init() {
 	conf.GitHubClientID = os.Getenv("GITHUB_CLIENT_ID")
 	conf.GitHubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 	conf.ServiceName = os.Getenv("OTEL_SERVICE_NAME")
+
+	tracer = otel.Tracer(conf.ServiceName)
 }
 
 func main() {
 	ctx := context.Background()
 
-	var err error
+	otelShutdown, err := setupOTelSDK(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer func() {
+		err = errors.Join(err, otelShutdown(ctx))
+		log.Println(err)
+	}()
 
 	redisConn, err = redisconn.NewRedisConn(ctx, conf.RedisAddr)
 	if err != nil {
@@ -95,7 +111,17 @@ func main() {
 
 	mux.Handle("POST /upload", requireAuth(http.HandlerFunc(uploadImage)))
 
+	httpSpanName := func(operation string, r *http.Request) string {
+		return fmt.Sprintf("HTTP %s %s", r.Method, r.URL.Path)
+	}
+
+	handler := otelhttp.NewHandler(
+		mux,
+		"/",
+		otelhttp.WithSpanNameFormatter(httpSpanName),
+	)
+
 	log.Println("Server started on port 8000")
 
-	log.Fatal(http.ListenAndServe(":8000", mux))
+	log.Fatal(http.ListenAndServe(":8000", handler))
 }

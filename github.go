@@ -6,10 +6,12 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 var httpClient = &http.Client{
-	Timeout: 2 * time.Minute,
+	Timeout:   2 * time.Minute,
+	Transport: otelhttp.NewTransport(http.DefaultTransport),
 }
 
 // GitHubUserProfile represents the user profile data received
