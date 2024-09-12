@@ -40,7 +40,7 @@ services:
     command: [-path, /migrations/, -database, "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@go-image-upload-db/${POSTGRES_DB}?sslmode=disable", up]
 
   postgres:
-    image: postgres:alpine
+    image: postgres:bookworm
     restart: always
     container_name: go-image-upload-db
     env_file:
@@ -62,7 +62,7 @@ services:
       - go-image-upload-network
 
   redis:
-    image: redis:alpine
+    image: redis:bookworm
     container_name: go-image-upload-redis
     restart: always
     healthcheck:

@@ -45,12 +45,12 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN go build -o go-social-login
+RUN CGO_ENABLED=0 go build -o go-social-login
 
 # Production stage
 # =============================================================================
 # Create a production stage to run the application binary
-FROM alpine:3.20 AS production
+FROM scratch AS production
 
 # Move to working directory /prod
 WORKDIR /prod
